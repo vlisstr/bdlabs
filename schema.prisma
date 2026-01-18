@@ -1,0 +1,77 @@
+// 1. Налаштування клієнта та джерела даних
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 2. Опис усіх моделей (таблиць) твоєї системи
+
+model Event {
+  id          Int        @id @default(autoincrement())
+  title       String
+  basePrice   Decimal    @db.Decimal(10, 2)
+  categories  Category[] @relation("EventToCategory")
+  matches     Match[]
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  events Event[] @relation("EventToCategory")
+}
+
+model Sector {
+  id         Int      @id @default(autoincrement())
+  name       String
+  multiplier Decimal  @default(1.0) @db.Decimal(3, 2)
+  seats      Seat[]
+}
+
+model Seat {
+  id       Int      @id @default(autoincrement())
+  sectorId Int
+  rowNo    Int
+  seatNo   Int
+  isVip    Boolean  @default(false)
+  sector   Sector   @relation(fields: [sectorId], references: [id])
+  tickets  Ticket[]
+}
+
+model Match {
+  id        Int       @id @default(autoincrement())
+  eventId   Int
+  matchDate DateTime
+  event     Event     @relation(fields: [eventId], references: [id])
+  bookings  Booking[]
+}
+
+model Customer {
+  id       Int       @id @default(autoincrement())
+  fullName String
+  email    String    @unique
+  phone    String?
+  bookings Booking[]
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  matchId    Int
+  totalPrice Decimal  @db.Decimal(10, 2)
+  customer   Customer @relation(fields: [customerId], references: [id])
+  match      Match    @relation(fields: [matchId], references: [id])
+  tickets    Ticket[]
+}
+
+model Ticket {
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  seatId    Int
+  price     Decimal @db.Decimal(10, 2)
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  seat      Seat    @relation(fields: [seatId], references: [id])
+}
